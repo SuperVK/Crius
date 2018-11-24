@@ -44,20 +44,34 @@ class BotVK(BaseAgent):
             self.renderer.begin_rendering()
         self.info.read_packet(packet)
         
+        calc_shot(self, True)
+
         if packet.game_info.is_kickoff_pause:
             self.state = 'kickOff'
         
+        if packet.game_info.seconds_elapsed - packet.game_ball.latest_touch.time_seconds < 0.1:
+            print('oof')
+            self.state = 'none'
+
+
         if self.state == 'none':
             self.get_new_state(packet)
             # put the car in the middle of the field
             
-        
-        elif self.state == 'defense' or self.state == 'offense':
+        elif self.state == 'getInShotPos':
+            if not calc_shot(self, False):
+                get_in_shot_position(self)
+            else:
+                self.state = 'clearBall'
+        elif self.state == 'clearBall':
             self.clear_ball(False)
         elif self.state == 'kickOff':
             self.kick_off(packet)
         elif self.state == 'get_boost':
-            get_boost(self, packet)
+            if packet.game_cars[self.index].boost != 100.0:
+                get_boost(self, packet)
+            else:
+                self.state = 'none'
 
         if self.debug_mode:
             self.debug_renderer(packet)
@@ -72,21 +86,22 @@ class BotVK(BaseAgent):
         b = Ball(self.info.ball)
         ball = self.info.ball
         car = self.info.my_car
-        ball_predictions = []
-        for i in range(180):
+        ball_prediction = self.get_ball_prediction_struct()
+        predictions = []
+        if ball_prediction is not None:
+            for i in range(0, ball_prediction.num_slices):
+                prediction_slice = ball_prediction.slices[i]
+                location = prediction_slice.physics.location
 
-            # simulate the forces acting on the ball for 1 frame
-            b.step(1.0 / 60.0)
+                predictions.append([location.x, location.y, location.z])
 
-            # and add a copy of new ball position to the list of predictions
-            ball_predictions.append(vec3(b.pos))
+
 
         red = self.renderer.create_color(255, 255, 30, 30)
-        self.renderer.draw_polyline_3d(ball_predictions, red)
+        self.renderer.draw_polyline_3d(predictions, red)
 
         # drawing
-        self.renderer.draw_string_2d(5, 30, 1, 1, str(norm(self.info.my_car.vel)), self.renderer.black())
-        self.renderer.draw_string_2d(5, 20, 1, 1, str(norm(ball.pos-car.pos)), self.renderer.black())
+        
         self.renderer.draw_string_2d(5, 5, 1, 1, self.state, self.renderer.black())
         # self.renderer.draw_string_2d(5, 15, 1, 1, str(lisp[0]), self.renderer.black())
         # self.renderer.draw_string_2d(5, 25, 1, 1, str(lisp[1]), self.renderer.black())
@@ -118,12 +133,15 @@ class BotVK(BaseAgent):
 
     def get_new_state(self, packet: GameTickPacket):
         ball = self.info.ball
-        if ball.pos[1] < 0 and self.info.team == 0:
-            self.state = 'defense'
-        elif ball.pos[1] > 0 and self.info.team == 1:
-            self.state = 'defense'
+        self.in_shot_position = calc_shot(self, False)
+
+        if ball.vel[2] > 1000:
+            self.state = 'get_boost'
+        elif self.in_shot_position:
+            self.state = 'clearBall'
         else:
-            self.state = 'offense' 
+            self.state = 'getInShotPos'
+        
 
     def kick_off(self, packet: GameTickPacket):
         if packet.game_info.seconds_elapsed-packet.game_ball.latest_touch.time_seconds < 1:
@@ -134,11 +152,6 @@ class BotVK(BaseAgent):
 
 
     def clear_ball(self, kick_off):
-        self.in_shot_position = calc_shot(self)
-        if not self.in_shot_position and not kick_off:
-            self.controller_state = get_in_shot_position(self)
-            return
-
         ball = self.info.ball
         car = self.info.my_car
 
@@ -213,10 +226,10 @@ class BotVK(BaseAgent):
             turn = -1.0  # Negative value for a turn to the left.
         else:
             turn = 1.0
-        self.controller_state.throttle = 1.0
-        self.controller_state.steer = turn
-        self.controller_state.boost = True
-        return self.controller_state
+        self.controls.throttle = 1.0
+        self.controls.steer = turn
+        self.controls.boost = True
+        return self.controls
     
 
 

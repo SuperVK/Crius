@@ -97,7 +97,7 @@ def get_in_shot_position(agent):
         agent.controls.boost = False
     return agent.controls
 
-def calc_shot(agent):
+def calc_shot(agent, draw):
     ball = agent.info.ball
     car = agent.info.my_car
     posts = []
@@ -112,21 +112,29 @@ def calc_shot(agent):
     # delta_local[2]: how far above my car
     delta_local = dot(ball.pos - car.pos, car.theta)
 
-    A = ball.pos
-    B = vec2(ball.pos[0]+(ball.pos[0]-posts[0][0]), ball.pos[1]+(ball.pos[1]-posts[0][1]))
-    C = vec2(ball.pos[0]+(ball.pos[0]-posts[1][0]), ball.pos[1]+(ball.pos[1]-posts[1][1]))
+    
+    
 
-    angle0 = math.atan((A[0]-B[0])/(A[1]-B[1]))
-    angle1 = math.atan((A[0]-C[0])/(A[1]-B[1]))
-    angle_car_ball = math.atan((ball.pos[0]-car.pos[0])/(ball.pos[1]-car.pos[1]))
+    angle0 = math.atan2(ball.pos[1]-posts[0][1], ball.pos[0]-posts[0][0])
+    angle1 = math.atan2(ball.pos[1]-posts[1][1], ball.pos[0]-posts[1][0])
+
+    angle_car_ball = math.atan2((car.pos[1]-ball.pos[1]),(car.pos[0]-ball.pos[0]))
+
+    if draw:
+        agent.renderer.draw_string_2d(5, 20, 1, 1, str(angle0), agent.renderer.black())
+        agent.renderer.draw_string_2d(5, 40, 1, 1, str(angle1), agent.renderer.black())
+        agent.renderer.draw_string_2d(5, 60, 1, 1, str(angle_car_ball), agent.renderer.black())
 
 
 
-    if angle_car_ball > angle0 and angle_car_ball < angle1 and car.pos[1] > ball.pos[1] and agent.info.team == 1:
+    if angle_car_ball > angle0 and angle_car_ball < angle1 and car.pos[1] < ball.pos[1] and agent.info.team == 0:
+        print('hai')
         agent.in_shot_position = True
-    elif angle_car_ball > angle0 and angle_car_ball < angle1 and car.pos[1] < ball.pos[1] and agent.info.team == 0:
+    elif angle_car_ball < angle0 and angle_car_ball > angle1 and car.pos[1] > ball.pos[1] and agent.info.team == 1:
+        print('bye')
         agent.in_shot_position = True
     else:
         agent.in_shot_position = False
     
+    print(agent.in_shot_position)
     return agent.in_shot_position
