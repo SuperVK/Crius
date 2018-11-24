@@ -21,12 +21,51 @@ def get_in_shot_position(agent):
 
     #good_shot_position = vec3(ball.pos[0]+unit_ball_to_goal[0]*3000, ball.pos[1]+unit_ball_to_goal[1]*3000, 92.75)
 
-    ideal_shoot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*3000, ball.pos[1]-unit_goal_to_ball[1]*3000, 92.75)
+    good_shot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*3000, ball.pos[1]-unit_goal_to_ball[1]*3000, 92.75)
 
     #check if the pos is out of the map cuz that's bad haha
-    #if ideal_shoot_position[0] > 
+    #https://i.imgur.com/urtkm1t.png
+    if good_shot_position[0] > 4096:
+        AB = ball.pos[0]-4096
+        CD = ball.pos[1]-good_shot_position[1]
+        AC = ball.pos[0]-good_shot_position[0]
+        
+        BE = (AB*CD)/AC
+        
+        magnitude = math.sqrt(AB**2+BE**2)
+        good_shot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*magnitude, ball.pos[1]-unit_goal_to_ball[1]*magnitude, 92.75)
+    if good_shot_position[0] < -4096:
+        AB = -4096-ball.pos[0]
+        CD = good_shot_position[1]-ball.pos[1]
+        AC = good_shot_position[0]-ball.pos[0]
 
-    good_shot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*3000, ball.pos[1]-unit_goal_to_ball[1]*3000, 92.75)
+        BE = (AB*CD)/AC
+
+        magnitude = math.sqrt(AB**2+BE**2)
+        good_shot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*magnitude, ball.pos[1]-unit_goal_to_ball[1]*magnitude, 92.75)
+
+    if good_shot_position[1] > 5120:
+        AB = 5120-ball.pos[1]
+        CD = good_shot_position[0]-ball.pos[0]
+        AC = good_shot_position[1]-ball.pos[1]
+
+        BE = (AB*CD)/AC
+
+        magnitude = math.sqrt(AB**2+BE**2)
+        good_shot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*magnitude, ball.pos[1]-unit_goal_to_ball[1]*magnitude, 92.75)
+        
+    if good_shot_position[1] < -5120:
+        AB = -5120-ball.pos[1]
+        CD = good_shot_position[0]-ball.pos[0]
+        AC = good_shot_position[1]-ball.pos[1]
+
+        BE = (AB*CD)/AC
+
+        magnitude = math.sqrt(AB**2+BE**2)
+        good_shot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*magnitude, ball.pos[1]-unit_goal_to_ball[1]*magnitude, 92.75)
+
+
+   # good_shot_position = vec3(ball.pos[0]-unit_goal_to_ball[0]*3000, ball.pos[1]-unit_goal_to_ball[1]*3000, 92.75)
     delta_local = dot(good_shot_position - car.pos, car.theta)
     phi = math.atan2(delta_local[1], delta_local[0])
 
@@ -84,10 +123,8 @@ def calc_shot(agent):
 
 
     if angle_car_ball > angle0 and angle_car_ball < angle1 and car.pos[1] > ball.pos[1] and agent.info.team == 1:
-        print('hai')
         agent.in_shot_position = True
     elif angle_car_ball > angle0 and angle_car_ball < angle1 and car.pos[1] < ball.pos[1] and agent.info.team == 0:
-        print('bye')
         agent.in_shot_position = True
     else:
         agent.in_shot_position = False
