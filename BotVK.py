@@ -4,21 +4,13 @@ DEBUG_MODE = True
 import math
 import time
 
-from Utils import Vector2, Vector3, get_car_facing_vector, get_closest_boost, distance2D
+
+from gameInfo import Game
+from Utils import Vector2, Vector3, get_car_facing_vector, quickChat, clamp
 from Shooting import calc_shot, get_in_shot_position
-from States import kick_off, defense, offense, get_boost
 
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
 from rlbot.utils.structures.game_data_struct import GameTickPacket
-from rlbot.utils.game_state_util import GameState, BallState, CarState, Physics, Vector3, Rotator
-
-
-from RLUtilities.GameInfo import GameInfo
-from RLUtilities.Simulation import Ball
-from RLUtilities.LinearAlgebra import dot, clip, vec3, norm
-from RLUtilities.Maneuvers import AirDodge
-from RLUtilities.controller_input import controller
-
 
 
 TEAM0_POSTS = [[893, -5120], [-893, -5120]]
@@ -30,27 +22,30 @@ class BotVK(BaseAgent):
         #This runs once before the bot starts up
         self.dodgeTimer = 0
         self.dodgeState = 0
-        self.info = GameInfo(index, team)
+        self.index = index
+        self.team = team
         self.controls = SimpleControllerState()
-        self.state = 'kickOff'
+        self.state = 'kick_off'
         self.start = time.time()
         self.in_shot_position = False
         self.index = index
         self.debug_mode = DEBUG_MODE
         
+    def initialize_agent(self):
+        self.game = Game(self.index, self.team, self.get_field_info())
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
         if self.debug_mode:
             self.renderer.begin_rendering()
-        self.info.read_packet(packet)
-        
+        self.game.load_packet(packet, self.get_ball_prediction_struct())
         calc_shot(self, True)
 
+        quickChat.run(self, packet)
+
         if packet.game_info.is_kickoff_pause:
-            self.state = 'kickOff'
+            self.state = 'kick_off'
         
         if packet.game_info.seconds_elapsed - packet.game_ball.latest_touch.time_seconds < 0.1:
-            print('oof')
             self.state = 'none'
 
 
@@ -62,14 +57,14 @@ class BotVK(BaseAgent):
             if not calc_shot(self, False):
                 get_in_shot_position(self)
             else:
-                self.state = 'clearBall'
-        elif self.state == 'clearBall':
+                self.state = 'clear_ball'
+        elif self.state == 'clear_ball':
             self.clear_ball(False)
-        elif self.state == 'kickOff':
+        elif self.state == 'kick_off':
             self.kick_off(packet)
         elif self.state == 'get_boost':
-            if packet.game_cars[self.index].boost != 100.0:
-                get_boost(self, packet)
+            if packet.game_cars[self.index].boost != 100.0: 
+                self.get_boost(packet)
             else:
                 self.state = 'none'
 
@@ -79,40 +74,18 @@ class BotVK(BaseAgent):
         return self.controls
 
     def debug_renderer(self, packet):
-        
-
-
-         # make a copy of the ball's info that we can change
-        b = Ball(self.info.ball)
-        ball = self.info.ball
-        car = self.info.my_car
-        ball_prediction = self.get_ball_prediction_struct()
-        predictions = []
-        if ball_prediction is not None:
-            for i in range(0, ball_prediction.num_slices):
-                prediction_slice = ball_prediction.slices[i]
-                location = prediction_slice.physics.location
-
-                predictions.append([location.x, location.y, location.z])
-
-
-
-        red = self.renderer.create_color(255, 255, 30, 30)
-        self.renderer.draw_polyline_3d(predictions, red)
-
         # drawing
-        
+        # my_car = self.game.my_car
+        # ball = self.game.ball
+    
         self.renderer.draw_string_2d(5, 5, 1, 1, self.state, self.renderer.black())
         # self.renderer.draw_string_2d(5, 15, 1, 1, str(lisp[0]), self.renderer.black())
         # self.renderer.draw_string_2d(5, 25, 1, 1, str(lisp[1]), self.renderer.black())
         # self.renderer.draw_string_2d(5, 35, 1, 1, str(lisp[2]), self.renderer.black())
 
-        
-
-
         ball_location = packet.game_ball.physics.location
         posts = []
-        if self.info.team == 0:
+        if self.game.team == 0:
             posts = TEAM1_POSTS
         else:
             posts = TEAM0_POSTS
@@ -120,7 +93,8 @@ class BotVK(BaseAgent):
         color = self.renderer.red()
         if self.in_shot_position:
             color = self.renderer.green()
-        
+    
+
         self.renderer.draw_line_3d([posts[0][0], posts[0][1], 92.75], [ball_location.x, ball_location.y, ball_location.z], self.renderer.black())
         self.renderer.draw_line_3d([posts[1][0], posts[1][1], 92.75], [ball_location.x, ball_location.y, ball_location.z], self.renderer.black())
         
@@ -132,13 +106,13 @@ class BotVK(BaseAgent):
         
 
     def get_new_state(self, packet: GameTickPacket):
-        ball = self.info.ball
+        ball = self.game.ball
         self.in_shot_position = calc_shot(self, False)
 
-        if ball.vel[2] > 1000:
+        if ball.velocity.z > 750:
             self.state = 'get_boost'
         elif self.in_shot_position:
-            self.state = 'clearBall'
+            self.state = 'clear_ball'
         else:
             self.state = 'getInShotPos'
         
@@ -152,49 +126,51 @@ class BotVK(BaseAgent):
 
 
     def clear_ball(self, kick_off):
-        ball = self.info.ball
-        car = self.info.my_car
+        ball = self.game.ball
+        my_car = self.game.my_car
 
         # the vector from the car to the ball in local coordinates:
         # delta_local[0]: how far in front of my car
         # delta_local[1]: how far to the left of my car
         # delta_local[2]: how far above my car
-        delta_local = dot(ball.pos - car.pos, car.theta)
+        car_facing = my_car.get_car_facing_vector()
+        car_to_ball = ball.pos-my_car.pos
+
+        phi = car_facing.get_2d_angle()-car_to_ball.get_2d_angle()
         # the angle between the direction the car is facing
         # and the in-plane local position of the ball
-        phi = math.atan2(delta_local[1], delta_local[0])
+        
 
-        speed = norm(car.vel)
+        #speed = my_car.velocity.get_magnitude()
 
         
         
         self.dodgeTimer += 0.01666
 
-        start = 0
 
-        if kick_off:
-            start = 3
-        else:
-            start = 1/3
+        # if kick_off:
+        #     start = 3
+        # else:
+        #     start = 1/3
 
         #dodge earlier when kick_off so you launch ball slightly in the air
-        if norm(ball.pos-car.pos) < speed*start:
-            if self.dodgeTimer > 2:
-                self.dodgeState = 0
-                self.dodgeTimer = 0
-            if self.dodgeState == 0:
-                self.dodgeState = 1
-                self.dodgeTimer == 0
-                self.action = AirDodge(car, 0.1, ball.pos)
-                return
-            else:
-                self.action.step(0.01666)
-                self.controls = self.action.controls
+        # if (ball.pos-my_car.pos).get_magnitude() < speed*start:
+        #     if self.dodgeTimer > 2:
+        #         self.dodgeState = 0
+        #         self.dodgeTimer = 0
+        #     if self.dodgeState == 0:
+        #         self.dodgeState = 1
+        #         self.dodgeTimer == 0
+        #         self.action = AirDodge(car, 0.1, ball.pos)
+        #         return
+        #     else:
+        #         self.action.step(0.01666)
+        #         self.controls = self.action.controls
                 
-                return 
+        #         return 
 
         # a simple steering controller that is proportional to phi
-        self.controls.steer = clip(2.5 * phi, -1.0, 1.0)
+        self.controls.steer = clamp(2.5 * phi, -1.0, 1.0)
         if phi > 2.5 or phi < -2.5:
 
             self.controls.handbrake = True
@@ -211,24 +187,26 @@ class BotVK(BaseAgent):
 
 
     def get_boost(self, packet: GameTickPacket) -> SimpleControllerState:
-        my_car = self.info.my_car
-        field_info = self.get_field_info()
-        boost = field_info.boost_pads[get_closest_boost(field_info, my_car, packet)]
-        boost_location = Vector2(boost.location.x, boost.location.y)
-        car_location = Vector2(my_car.physics.location.x, my_car.physics.location.y)
-        car_direction = get_car_facing_vector(my_car)
-        car_to_boost = boost_location - car_location
+        ball = self.game.ball
+        my_car = self.game.my_car
+        boost = self.game.get_closest_boost()
+        car_to_boost = boost.pos - my_car.pos
 
-        steer_correction_radians = car_direction.correction_to(car_to_boost)
+        car_facing = my_car.get_car_facing_vector()
+        car_to_ball = ball.pos-my_car.pos
 
-        if steer_correction_radians > 0:
-            # Positive radians in the unit circle is a turn to the left.
-            turn = -1.0  # Negative value for a turn to the left.
+        phi = car_facing.get_2d_angle()-car_to_ball.get_2d_angle()
+
+        self.controls.steer = clamp(2.5 * phi, -1.0, 1.0)
+        if phi > 1 or phi < -1:
+            self.controls.handbrake = True
+        elif phi < 0.001 and phi > -0.001 and car_to_boost.get_magnitude() > my_car.velocity.get_magnitude():
+            self.controls.boost = True
+            self.controls.throttle = 1.0
         else:
-            turn = 1.0
-        self.controls.throttle = 1.0
-        self.controls.steer = turn
-        self.controls.boost = True
+            self.controls.handbrake = False
+            self.controls.throttle = 0.5
+            self.controls.boost = False
         return self.controls
     
 
