@@ -1,0 +1,14 @@
+{
+  "name": "woopdiedoop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "SuperVK",
+  "license": "MIT",
+  "dependencies": {
+    "rlbot-test": "github:SuperVK/RLBotJS"
+  }
+}
