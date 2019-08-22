@@ -6,7 +6,7 @@ class Game {
     }
     loadPacket(gameTickPacket) {
         this.ball = new Ball(gameTickPacket.ball)
-        this.numCars = gameTickPacket
+        this.numCars = gameTickPacket.players.length
         this.cars = []
         for(let i = 0; i < this.numCars; i++) {
             this.cars.push(new Car(gameTickPacket.gameCars[i]))
