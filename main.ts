@@ -1,8 +1,12 @@
-const { BaseAgent, SimpleController, quickChats, Manager } = require('rlbot-test');
-const { Game } = require('./utils/preprocessing')
-const KickoffState = require('./states/kickoff')
-
-class BotVK extends BaseAgent {
+import { BaseAgent, SimpleController, quickChats, Manager } from 'rlbot-test';
+import { Game } from './utils/preprocessing';
+import { KickoffState } from './states/kickoff';
+import { BaseState } from './states/base'
+export class BotVK extends BaseAgent {
+    controller: SimpleController;
+    game: Game;
+    state: BaseState;
+    lastSecond: number;
     constructor(name, team, index, fieldInfo) {
         super(name, team, index, fieldInfo) //pushes these all to `this`.
         this.controller = new SimpleController()

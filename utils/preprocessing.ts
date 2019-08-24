@@ -1,6 +1,13 @@
-const { Vector3, Rotator } = require('./types')
+import { FieldInfo, GameInfo } from "rlbot-test";
 
-class Game {
+import { Vector3, Rotator } from './types'
+
+export class Game {
+    fieldInfo: FieldInfo;
+    ball: Ball;
+    numCars: number;
+    cars: Car[];
+    gameInfo: GameInfo;
     constructor(fieldInfo) {
         this.fieldInfo = fieldInfo
     }
@@ -15,9 +22,13 @@ class Game {
     }
 }
 
-
-
 class Car {
+    position: Vector3;
+    rotation: Rotator;
+    velocity: Vector3;
+    angularVelocity: Vector3;
+    team: number;
+    boost: number;
     constructor(car) {
         this.position = new Vector3(car.physics.location)
         this.rotation = new Rotator(car.phsyics.rotation)
@@ -28,7 +39,12 @@ class Car {
     }
 }
 
-class Ball {
+export class Ball {
+    position: Vector3;
+    rotation: Rotator;
+    velocity: Vector3;
+    angularVelocity: Vector3;
+    latestTouch: any;
     constructor(ball) {
         this.position = new Vector3(ball.physics.location)
         this.rotation = new Rotator(ball.physics.rotation)
@@ -36,9 +52,4 @@ class Ball {
         this.angularVelocity = new Vector3(ball.physics.angularVelocity)
         this.latestTouch = ball.latestTouch
     }
-}
-
-module.exports = {
-    Game: Game,
-    Ball: Ball
 }

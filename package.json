@@ -1,13 +1,13 @@
 {
-  "name": "woopdiedoop",
+  "name": "botvk",
   "version": "1.0.0",
-  "description": "",
+  "description": "A cool RL bot",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "run": "node ."
   },
   "author": "SuperVK",
-  "license": "GNU General Public License v3.0",
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "rlbot-test": "github:SuperVK/RLBotJS"
   }

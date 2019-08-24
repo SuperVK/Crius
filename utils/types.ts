@@ -1,11 +1,14 @@
-class Vector3 {
-    /**
-     * 
-     * @param {Number|Object|Array} xArr 
-     * @param {Number} [y] 
-     * @param {Number} [z] 
-     */
-    constructor(xArr, y, z) {
+interface InterfaceVector3 {
+    x: number;
+    y: number;
+    z: number;
+}
+
+export class Vector3 {
+    x: number;
+    y: number;
+    z: number;
+    constructor(xArr, y?: number, z?: number) {
         if(typeof xArr == 'object') {
             if(xArr.length != undefined) {
                 this.x = xArr[0]
@@ -25,8 +28,11 @@ class Vector3 {
 
 }
 
-class Rotator {
-    constructor(pitchArr, yaw, roll) {
+export class Rotator {
+    pitch: number;
+    yaw: number;
+    roll: number;
+    constructor(pitchArr, yaw?, roll?) {
         if(typeof pitchArr == 'object') {
             if(pitchArr.length != undefined) {
                 this.pitch = pitchArr[0]
@@ -43,9 +49,4 @@ class Rotator {
             this.roll = roll
         }
     }
-}
-
-module.exports = {
-    Vector3: Vector3,
-    Rotator: Rotator
 }

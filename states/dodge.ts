@@ -1,10 +1,12 @@
-const BaseState = require('./base')
+import { BaseState } from './base';
+import { GameTickPacket } from 'rlbot-test';
+import { BotVK } from '../main';
 
-class DodgeState extends BaseState {
+export class DodgeState extends BaseState {
     constructor(agent) {
         super(agent)
     }
-    run(agent) {
+    run(agent: BotVK) {
         this._run(agent)
         this.agent.controller.boost = false
         if(this.timer <= 0.1) this.agent.controller.jump = true
@@ -15,5 +17,3 @@ class DodgeState extends BaseState {
         } else if(this.timer >= 1.5) this.finished = true
     }
 }
-
-module.exports = DodgeState
