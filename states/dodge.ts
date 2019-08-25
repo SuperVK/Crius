@@ -1,5 +1,4 @@
-import { BaseState } from './base';
-import { GameTickPacket } from 'rlbot-test';
+import { BaseState } from './base'
 import { BotVK } from '../main';
 
 export class DodgeState extends BaseState {
@@ -17,3 +16,4 @@ export class DodgeState extends BaseState {
         } else if(this.timer >= 1.5) this.finished = true
     }
 }
+

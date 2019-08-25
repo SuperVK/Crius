@@ -2,13 +2,16 @@
   "name": "botvk",
   "version": "1.0.0",
   "description": "A cool RL bot",
-  "main": "main.js",
+  "main": "./built/main.js",
   "scripts": {
     "run": "node ."
   },
   "author": "SuperVK",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
+    "@types/mathjs": "^6.0.1",
+    "@types/node": "^12.7.2",
+    "mathjs": "^6.1.0",
     "rlbot-test": "github:SuperVK/RLBotJS"
   }
 }

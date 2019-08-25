@@ -1,7 +1,9 @@
-import { BaseAgent, SimpleController, quickChats, Manager } from 'rlbot-test';
+import { BaseAgent, SimpleController, Manager, GameTickPacket, BallPrediction, Color } from 'rlbot-test';
 import { Game } from './utils/preprocessing';
-import { KickoffState } from './states/kickoff';
-import { BaseState } from './states/base'
+import { KickoffState } from './states/Kickoff';
+import { BaseState } from './states/base';
+import { GoalShotState } from './states/GoalShot'
+
 export class BotVK extends BaseAgent {
     controller: SimpleController;
     game: Game;
@@ -14,12 +16,13 @@ export class BotVK extends BaseAgent {
         this.state = new KickoffState(this)
         this.lastSecond = 0
     }
-    getOutput(gameTickPacket, ballPrediction) {
+    getOutput(gameTickPacket: GameTickPacket, ballPrediction: BallPrediction) {
         this.controller = new SimpleController()
-        this.game.loadPacket(gameTickPacket)
+        this.game.loadPacket(gameTickPacket, ballPrediction, this.index)
         if(this.lastSecond == this.game.gameInfo.secondsElapsed) return this.controller
         this.lastSecond = this.game.gameInfo.secondsElapsed
         if(this.game.gameInfo.isKickoffPause && (this.state.timer > 10 || !(this.state instanceof KickoffState))) this.state = new KickoffState(this)
+        if(this.state.finished) this.state = new GoalShotState(this)
         this.state.run(this)
         return this.controller
     }

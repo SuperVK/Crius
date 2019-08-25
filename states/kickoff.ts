@@ -19,10 +19,13 @@ export class KickoffState extends BaseState {
         }
     }
     findNewState() {
-        console.log(this.timer)
         this.agent.controller.throttle = 1
+        let localPos = this.agent.game.ball.localPosition
+        if(localPos.y > localPos.x/25) this.agent.controller.steer = 0.5
+        else if(localPos.y < -localPos.x/25) this.agent.controller.steer = -0.5
+        else this.agent.controller.steer = 0
         this.agent.controller.boost = true
-        if(Math.floor(this.timer*10)/10 == 0.5) {
+        if(this.agent.game.ball.localPosition.x < 1500) {
             this.substate = new DodgeState(this.agent)
         }
     }
