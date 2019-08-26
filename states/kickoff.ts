@@ -1,6 +1,6 @@
 import { BaseState } from  './base';
 import { DodgeState } from './dodge';
-import { BotVK } from '../main';
+import { Agent } from '../main';
 
 export class KickoffState extends BaseState {
     substate: (() => void)|BaseState;
@@ -8,7 +8,7 @@ export class KickoffState extends BaseState {
         super(agent)
         this.substate = this.findNewState
     }
-    run(agent: BotVK) {
+    run(agent: Agent) {
         if(this.agent.game.gameInfo.isKickoffPause == false) this.finished = true
         this._run(agent)
         if(this.substate instanceof BaseState) {

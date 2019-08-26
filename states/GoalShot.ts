@@ -1,5 +1,5 @@
 import { BaseState } from  './base';
-import { BotVK } from '../main';
+import { Agent } from '../main';
 import { ClearState } from './clear'
 import { getLocal, Orientation, Vector3 } from '../utils/misc';
 
@@ -9,7 +9,7 @@ export class GoalShotState extends BaseState {
         super(agent)
         this.substate = this.findNewState
     }
-    run(agent: BotVK) {
+    run(agent: Agent) {
         this._run(agent)
         if(this.substate instanceof BaseState) {
             this.substate.run(agent)
@@ -22,7 +22,7 @@ export class GoalShotState extends BaseState {
         let game = this.agent.game
         if(game.ballPredictions[60*1].position.y*game.teamMult < -2500) {
             console.log(game.ballPredictions[60*3].position.y*game.teamMult)
-            this.substate = new ClearState(this)
+            this.substate = new ClearState(this.agent)
         }       
     }
 }

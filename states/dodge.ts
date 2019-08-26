@@ -1,11 +1,11 @@
 import { BaseState } from './base'
-import { BotVK } from '../main';
+import { Agent } from '../main';
 
 export class DodgeState extends BaseState {
     constructor(agent) {
         super(agent)
     }
-    run(agent: BotVK) {
+    run(agent: Agent) {
         this._run(agent)
         this.agent.controller.boost = false
         if(this.timer <= 0.1) this.agent.controller.jump = true

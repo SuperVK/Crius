@@ -4,7 +4,7 @@ import { KickoffState } from './states/Kickoff';
 import { BaseState } from './states/base';
 import { GoalShotState } from './states/GoalShot'
 
-export class BotVK extends BaseAgent {
+export class Agent extends BaseAgent {
     controller: SimpleController;
     game: Game;
     state: BaseState;
@@ -28,5 +28,5 @@ export class BotVK extends BaseAgent {
     }
 }
 
-const manager = new Manager(BotVK)
+const manager = new Manager(Agent)
 manager.start()

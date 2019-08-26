@@ -35,8 +35,8 @@ export class Vector3 {
     add(target: Vector3): Vector3 {
         return new Vector3(this.x+target.x, this.y+target.y, this.z+target.z)
     }
-    getMagnitude() {
-        
+    getMagnitude(): number {
+        return Math.sqrt(this.x**2+this.y**2+this.z**2)
     }
 }
 
@@ -89,7 +89,8 @@ export class Orientation {
     }
 }
 
-export function getLocal(center: Vector3, orientation: Orientation, target: Vector3): Vector3 {
+export function getLocal(center: Vector3, rotation: Rotator, target: Vector3): Vector3 {
+    let orientation = new Orientation(rotation)
     let x = dot(target.subtract(center).convertToArray(), orientation.forward.convertToArray())
     let y = dot(target.subtract(center).convertToArray(), orientation.right.convertToArray())
     let z = dot(target.subtract(center).convertToArray(), orientation.up.convertToArray())
