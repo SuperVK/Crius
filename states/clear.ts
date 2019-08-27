@@ -55,7 +55,7 @@ export class ClearState extends BaseState {
         this.agent.controller.boost = true
         if(this.agent.game.ball.localPosition.x < 1500) {
             this.substate = new DodgeState(this.agent)
-            this.ballInterception = null
+            this.ballInterception = null 
         }
     }
     calcBestInterSpot() {
