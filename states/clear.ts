@@ -9,6 +9,7 @@ import { Color } from 'rlbot-test';
 export class ClearState extends BaseState {
     substate: (() => void)|BaseState;
     ballInterception: Vector3;
+    ballTime: number;
     lastTouch: number; // the time when the last touch has been, useful for seeing if the ball has been hit
     constructor(agent) {
         super(agent)
@@ -41,6 +42,7 @@ export class ClearState extends BaseState {
     }
     goToBall() {
         if(this.ballInterception == null || this.lastTouch < this.agent.game.ball.latestTouch.gameSeconds) this.calcBestInterSpot()
+        if(this.ballInterception == null) return; // when nothing found
         this.agent.controller.throttle = 1
         let localPos = getLocal(this.agent.game.myCar.position, this.agent.game.myCar.rotation, this.ballInterception)
         let red = new Color(255, 255, 0, 0)
@@ -53,9 +55,15 @@ export class ClearState extends BaseState {
         else if(localPos.y < -localPos.x/25) this.agent.controller.steer = -0.5
         else this.agent.controller.steer = 0
         this.agent.controller.boost = true
+        let ETA = this.ballInterception.getMagnitude()/this.agent.game.myCar.velocity.getMagnitude() // uu/(uu/s)=s
+        if(this.agent.game.gameInfo.secondsElapsed+ETA < this.ballTime-1) {
+            if(this.agent.game.myCar.boost != 0) this.agent.controller.boost = false
+            else this.agent.controller.throttle = 0
+        }
         if(this.agent.game.ball.localPosition.x < 1500) {
             this.substate = new DodgeState(this.agent)
             this.ballInterception = null
+            this.finished = true
         }
     }
     calcBestInterSpot() {
@@ -65,6 +73,7 @@ export class ClearState extends BaseState {
             console.log(seconds)
             if(Math.round(seconds+this.agent.game.gameInfo.secondsElapsed) == Math.round(slice.gameSeconds)) {
                 this.ballInterception = slice.position
+                this.ballTime = slice.gameSeconds
                 this.lastTouch = this.agent.game.ball.latestTouch.gameSeconds
                 return;
             }

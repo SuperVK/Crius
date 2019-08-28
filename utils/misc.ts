@@ -38,6 +38,10 @@ export class Vector3 {
     getMagnitude(): number {
         return Math.sqrt(this.x**2+this.y**2+this.z**2)
     }
+    getUnitVector(): Vector3 {
+        let magnitude = this.getMagnitude()
+        return new Vector3(this.x/magnitude, this.y/magnitude, this.z/magnitude)
+    }
 }
 
 export class Rotator {

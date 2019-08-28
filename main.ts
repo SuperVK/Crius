@@ -3,6 +3,7 @@ import { Game } from './utils/preprocessing';
 import { KickoffState } from './states/Kickoff';
 import { BaseState } from './states/base';
 import { GoalShotState } from './states/GoalShot'
+import { ClearState } from './states/clear';
 
 export class Agent extends BaseAgent {
     controller: SimpleController;
@@ -22,9 +23,20 @@ export class Agent extends BaseAgent {
         if(this.lastSecond == this.game.gameInfo.secondsElapsed) return this.controller
         this.lastSecond = this.game.gameInfo.secondsElapsed
         if(this.game.gameInfo.isKickoffPause && (this.state.timer > 10 || !(this.state instanceof KickoffState))) this.state = new KickoffState(this)
-        if(this.state.finished) this.state = new GoalShotState(this)
+        if(this.state.finished) {
+            console.log('new statious')
+            this.findNewState()
+        }
         this.state.run(this)
         return this.controller
+    }
+    findNewState() {
+        let game = this.game
+        if(game.ballPredictions[60*3].position.y*game.teamMult < -2500) {
+            this.state = new ClearState(this)
+        } else {
+            this.state = new GoalShotState(this)
+        }
     }
 }
 
